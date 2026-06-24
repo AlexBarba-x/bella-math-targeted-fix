@@ -658,7 +658,7 @@ const App = {
   },
   cur(){return SCREENS[this.i];},
   home(){this.i=0;this.sub={};this.history=false;this.render();},
-  next(){if(this.el.next.disabled)return;if(this.i<SCREENS.length-1){this.i++;this.sub={};this.render();}},
+  next(){if(this.el.next.disabled)return;const s=this.cur();if(s.kind==='worked'&&(this.sub.step||1)<s.steps.length){this.workedNext();return;}if(this.i<SCREENS.length-1){this.i++;this.sub={};this.render();}},
   prev(){if(this.i>0){this.i--;this.sub={};this.render();}},
   play(key){const src=AUDIO[key];const w=this.el.wave;
     if(!src){w.classList.remove('playing');return;}
@@ -723,13 +723,14 @@ const App = {
       ${fig}
       <div class="steps">${stepsHtml}</div>
       ${done?`<div class="result">${s.result}</div>`:''}
-      ${!done?`<button class="btn" onclick="App.workedNext()">Reveal the next step</button>`:''}
     </div>`;
-    this.el.next.disabled=!done;
+    // Continue is never a dead button on worked slides: it reveals the next
+    // step until all are shown, then advances. (next() routes the click.)
+    this.el.next.disabled=false;
+    this.el.next.textContent = done ? 'Continue ›' : 'Reveal the next step ›';
     if(this.sub._spoke!==st){this.sub._spoke=st;if(st===1)this.speak(s.id);}
   },
-  workedNext(){const s=this.cur();const st=this.sub.step||1;this.sub.step=Math.min(s.steps.length,st+1);this.render_worked(s);
-    this.el.next.disabled=(this.sub.step<s.steps.length);},
+  workedNext(){const s=this.cur();this.sub.step=Math.min(s.steps.length,(this.sub.step||1)+1);this.render_worked(s);},
 
   // ----- DRILL (teach-before-test practice; must get each right to advance) -----
   render_drill(s){
